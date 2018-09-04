@@ -41,19 +41,19 @@ module.exports = csurf
 function csurf (options) {
   var opts = options || {}
 
-  // get cookie options
+  // 初始化时设置cookie参数
   var cookie = getCookieOptions(opts.cookie)
 
   // get session options
   var sessionKey = opts.sessionKey || 'session'
 
-  // get value getter
-  var value = opts.value || defaultValue
+  // 设置从req的什么位置获取token值
+  var value = opts.value || defaultValue;
 
-  // token repo
+  // 生成操作token的实例
   var tokens = new Tokens(opts)
 
-  // ignored methods
+  // 设置不需要进行csrf token校验的方法，默认为'GET', 'HEAD', 'OPTIONS'
   var ignoreMethods = opts.ignoreMethods === undefined
     ? ['GET', 'HEAD', 'OPTIONS']
     : opts.ignoreMethods
@@ -62,7 +62,7 @@ function csurf (options) {
     throw new TypeError('option ignoreMethods must be an array')
   }
 
-  // generate lookup
+  // 生成一个包含需要被忽略方法的映射表
   var ignoreMethod = getIgnoredMethods(ignoreMethods)
 
   return function csrf (req, res, next) {
@@ -71,12 +71,13 @@ function csurf (options) {
       return next(new Error('misconfigured csrf'))
     }
 
-    // get the secret from the request
+    // 从cookie中获取生成token的secret，默认secret会保存在cookie的"_csrf"中；若初次请求，secret为undifined
     var secret = getSecret(req, sessionKey, cookie)
     var token
 
-    // lazy-load token getter
+    // 生成token的方法，挂载到req
     req.csrfToken = function csrfToken () {
+      // 如果请求req的cookie已经有secret，则会一直使用同样的secret
       var sec = !cookie
         ? getSecret(req, sessionKey, cookie)
         : secret
@@ -86,8 +87,8 @@ function csurf (options) {
         return token
       }
 
-      // generate & set new secret
       if (sec === undefined) {
+        // 生成secret
         sec = tokens.secretSync()
         setSecret(req, res, sessionKey, sec, cookie)
       }
@@ -95,20 +96,23 @@ function csurf (options) {
       // update changed secret
       secret = sec
 
-      // create new token
+      // 每次请求都生成新token
       token = tokens.create(secret)
 
       return token
     }
 
-    // generate & set secret
+    // 初次请求secret不存在
     if (!secret) {
+      // 生成secret
       secret = tokens.secretSync()
+      // 将secret值在res里写入cookie，默认字段为"_csrf"
       setSecret(req, res, sessionKey, secret, cookie)
     }
 
-    // verify the incoming token
+    // 根据req cookie传过来的secret值和token，判断是否通过校验
     if (!ignoreMethod[req.method] && !tokens.verify(secret, value(req))) {
+      // 若没有通过校验，返回code：EBADCSRFTOKEN
       return next(createError(403, 'invalid csrf token', {
         code: 'EBADCSRFTOKEN'
       }))
