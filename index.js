@@ -123,7 +123,7 @@ function csurf (options) {
 }
 
 /**
- * Default value function, checking the `req.body`
+ * 根据顺序依次获取token值
  * and `req.query` for the CSRF token.
  *
  * @param {IncomingMessage} req
@@ -141,7 +141,7 @@ function defaultValue (req) {
 }
 
 /**
- * Get options for cookie.
+ * 获取cookie配置
  *
  * @param {boolean|object} [options]
  * @returns {object}
@@ -191,7 +191,7 @@ function getIgnoredMethods (methods) {
 }
 
 /**
- * Get the token secret from the request.
+ * 从cookie中获取生成token的secret
  *
  * @param {IncomingMessage} req
  * @param {String} sessionKey
@@ -214,7 +214,7 @@ function getSecret (req, sessionKey, cookie) {
 }
 
 /**
- * Get the token secret bag from the request.
+ * 获取cookies
  *
  * @param {IncomingMessage} req
  * @param {String} sessionKey
